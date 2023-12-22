@@ -8,7 +8,6 @@ fn make_config() -> Config {
     cfg.build_target("preinstall")
         .define("BUILD_SHARED_LIBS", "true")
         .define("LLAMA_METAL", "ON")
-        .define("LLAMA_ACCELERATE", "true")
         .define("LLAMA_BUILD_EXAMPLES", "OFF")
         .define("LLAMA_BUILD_TESTS", "OFF")
     .define("LLAMA_BUILD_TESTS", "OFF");
@@ -20,7 +19,6 @@ fn make_config() -> Config {
     let mut cfg = Config::new("external/llama.cpp");
     cfg.build_target("preinstall")
         .define("BUILD_SHARED_LIBS", "true")
-        .define("LLAMA_ACCELERATE", "true")
         .define("LLAMA_BUILD_EXAMPLES", "OFF")
         .define("LLAMA_BUILD_TESTS", "OFF");
     cfg
@@ -36,12 +34,15 @@ fn main() {
     println!("cargo:rustc-link-lib=dylib=llama");
 
     println!("cargo:rerun-if-changed=external/llama.cpp/llama.h");
+    println!("cargo:rerun-if-changed=external/llama.cpp/common/common.h");
+    println!("cargo:rerun-if-changed=external/llama.cpp/common/sampling.h");
 
     let bindings = bindgen::Builder::default()
+        .clang_arg("-Iexternal/llama.cpp")
         .header("external/llama.cpp/llama.h")
         .allowlist_function("llama_.*")
         .allowlist_type("llama_.*")
-        .parse_callbacks(Box::new(bindgen::CargoCallbacks))
+        .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
         .generate()
         .expect("Unable to generate bindings");
 
